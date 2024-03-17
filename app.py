@@ -20,6 +20,7 @@ import tensorflow as tf
 import tensorflow as tf
 import keras
 import PIL
+import math
 from io import BytesIO
 import random
 
@@ -27,14 +28,27 @@ import random
 app = Flask(__name__)
 
 # Connect to MongoDB database
-client = MongoClient("mongodb+srv://varun:varun@mooo.vgkvsiy.mongodb.net/")
+client = MongoClient("mongodb://localhost:27017/")
 db = client.mooo
 cow_history = db.cow_history
 
 # Load Siamese neural network model and extract necessary layers
-loaded_model = tf.keras.models.load_model('./siamesemodelsoftmax')
-encoder_layer = keras.Model(inputs=loaded_model.input, outputs=loaded_model.get_layer("concatenate").output)
-classifier = keras.Model(inputs=encoder_layer.output, outputs=loaded_model.output)
+loaded_model = tf.keras.models.load_model('./cowMuzzleSiameseModel')
+encoder_layer = keras.Model(inputs=loaded_model.get_layer('imageEncoder').input, outputs=loaded_model.get_layer("imageEncoder").output)
+classifier = keras.Model(inputs=loaded_model.get_layer('siameseOutput').input, outputs=loaded_model.get_layer('siameseOutput').output)
+
+
+
+def cosine_similarity(v1, v2):
+    '''compute cosine similarity of v1 to v2: (v1 dot v2)/{||v1||*||v2||)'''
+    sumxx, sumxy, sumyy = 0, 0, 0
+    for i in range(len(v1)):
+        x = v1[i]; y = v2[i]
+        sumxx += x*x
+        sumyy += y*y
+        sumxy += x*y
+    return sumxy/math.sqrt(sumxx*sumyy)
+
 
 def similarity(encoded_repr_1: np.ndarray, encoded_repr_2: np.ndarray) -> tuple[bool, float]:
     """
@@ -47,9 +61,13 @@ def similarity(encoded_repr_1: np.ndarray, encoded_repr_2: np.ndarray) -> tuple[
     Returns:
         tuple[bool, float]: A tuple containing a boolean indicating similarity and a similarity score.
     """
-    probabilities = classifier.predict(np.array([np.concatenate([encoded_repr_1, encoded_repr_2])]))
-    similar, different = probabilities[0]
-    return similar >= 0.95, similar
+    distance = cosine_similarity(encoded_repr_1, encoded_repr_2)
+    probabilities = classifier.predict(np.array([distance]))
+    similar, dissimilar = probabilities[0]
+    if similar > dissimilar:
+        return (True,similar)
+    else:
+        return (False,dissimilar)
 
 @app.route('/')
 def home():
@@ -85,8 +103,8 @@ def add_cow_to_db():
         image_data = np.asarray(cow_image).reshape(1, 224, 224, 3).astype('float32') / 255
 
         # Extract encoded representation using the Siamese model
-        output = encoder_layer.predict([image_data, image_data])
-        encoded_representation = output[0][:3136]
+        output = encoder_layer.predict([image_data])
+        encoded_representation = output[0]
 
         # Check for similarity with existing cows
         for data in cow_history.find({}):
@@ -131,14 +149,15 @@ def identify_the_cow():
             image_data = np.asarray(cow_image).reshape(1, 224, 224, 3).astype('float32') / 255
 
             # Extract encoded representation using the Siamese model
-            output = encoder_layer.predict([image_data, image_data])
-            encoded_representation = output[0][:3136]
+            output = encoder_layer.predict([image_data])
+            encoded_representation = output[0]
 
             # Check for similarity with existing cows
             for data in cow_history.find({}):
                 is_similar, similarity_score = similarity(encoded_representation, np.array(data['encoded_rep'], dtype='float32'))
                 if is_similar:
                     return render_template('identify.html', exists=True, similarity_score=similarity_score * 100, cow_data=data)
+
 
             # If no similar cow is found, allow registration
             return render_template('identify.html', exists=False, base64_encoding=B64EI)
