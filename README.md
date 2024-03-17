@@ -29,5 +29,5 @@ Install the required Python packages using the following command:
 - A. Sai Tharun
 - G. Rohith Reddy
 - M.Varun
-- Bhahu Teja
+- Bhanu Teja
 - Vasu Dev
