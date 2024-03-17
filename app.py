@@ -17,7 +17,6 @@ from pymongo import MongoClient
 import base64
 import os
 import tensorflow as tf
-import tensorflow as tf
 import keras
 import PIL
 import math
