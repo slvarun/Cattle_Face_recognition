@@ -1,8 +1,12 @@
 env/
 
+<<<<<<< HEAD
 new_images/
 
 testimages/
 
+=======
+cowMuzzleSiameseModel/
+>>>>>>> d96bd7ba0954240ef27875a8d8f191c66f22dd7d
 
 
