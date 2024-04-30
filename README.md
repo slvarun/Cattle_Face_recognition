@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Siamese Network for cattle identification
 
 ## Description
@@ -92,4 +92,4 @@ Install the required Python packages using the following command:
 - M.Varun
 - Bhanu Teja
 - Vasu Dev
->>>>>>> d96bd7ba0954240ef27875a8d8f191c66f22dd7d
+
