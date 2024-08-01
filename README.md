@@ -25,7 +25,7 @@ To use this code, follow these steps:
 ```
 5) Run the main script :
 ```bash
-  python main.py
+  python app.py
 ```
 ## Model Architecture
 The Siamese neural network architecture consists of convolutional layers followed by fully connected layers. The model takes pairs of muzzle images, processes them through the encoder, calculates the cosine similarity between their embeddings, and outputs a binary classification result.
